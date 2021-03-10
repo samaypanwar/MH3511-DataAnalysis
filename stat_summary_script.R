@@ -66,7 +66,7 @@ ggplot(data)+
                  bins = 20)+
   xlab("Age")
 # seems to be uniformly distributed.
-# older people have a higher change of stroke
+# older people have a higher chance of stroke
   
 ggplot(data)+
   geom_bar(mapping =aes(work_type, fill = stroke),
