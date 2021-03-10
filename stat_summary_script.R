@@ -45,7 +45,7 @@ ggplot(data)+
            position = 'fill')+
   ylab("proportions")+
   xlab("Heart Disease")
-#those with heart disease have a higher change of stroke
+#those with heart disease have a higher chance of stroke
 
 ggplot(data)+
   geom_bar(mapping = aes(smoking_status, fill = stroke),
@@ -72,7 +72,7 @@ ggplot(data)+
   geom_bar(mapping =aes(work_type, fill = stroke),
            position = 'fill')+
   xlab("Work type")
-#self emplyed people seem to have a higher chance of stroke
+#self employed people seem to have a higher chance of stroke
 
 ggplot(data)+
   geom_bar(mapping = aes(Residence_type, fill = stroke),
