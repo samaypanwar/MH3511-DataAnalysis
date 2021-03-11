@@ -1,0 +1,145 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+setwd('C:/Users/Samay Panwar/Documents/GitHub/MH3511-DataAnalysis')
+#install.packages("wooldridge")
+#install.packages("lmtest")
+#install.packages('regclass')
+#install.packages('gclus')
+
+library(wooldridge)
+library(dplyr)
+library(lmtest)
+library(regclass)
+library(tidyverse)
+library(gclus)
+```
+```{r}
+data('bwght')
+
+write.csv(bwght, "C:/Users/Samay Panwar/Documents/GitHub/MH3511-DataAnalysis/bwght.csv")
+bw <- na.omit(bwght)
+```
+
+
+```{r}
+bw
+```
+
+```{r}
+cleanedData <- select(bw, -c("packs", "bwghtlbs", "lbwght", "lfaminc", "cigtax", "cigprice"))
+cleanedData$male = as.factor(cleanedData$male)
+cleanedData$white = as.factor(cleanedData$white)
+cleanedData = na.omit(cleanedData)
+
+str(cleanedData)
+```
+```{r}
+# Make a correlation scatterplot with lowess lines
+categoricalVariables = c('male', 'white')
+correlationData = select(cleanedData, -categoricalVariables)
+pairs(~bwght + faminc + fatheduc + motheduc + parity ,data=correlationData,
+   main="Scatterplot Matrix")
+```
+
+```{r, fig.width=10, fig.height=10}
+
+correlationData.r <- abs(cor(correlationData)) # get correlations
+correlationData.colors <- dmat.color(correlationData.r) # get colors
+# reorder variables so those with highest correlation
+# are closest to the diagonal
+correlationData.ordered <- order.single(correlationData.r)
+cpairs(correlationData, correlationData.ordered, panel.colors=correlationData.colors, gap=.1, 
+main="Scatterplot Matrix" )
+```
+
+
+```{r}
+# Conduct ANOVA for all categorical variables
+par(mfrow=c(1,2))
+boxplot(bwght~male, data = cleanedData, main='Comparison of Baby weight means by "Male"', cex.main=0.7)
+boxplot(bwght~white, data = cleanedData, main='Comparison of Baby weight means by "White"', cex.main=0.7)
+```
+
+
+```{r}
+male.aov = aov(bwght ~ male, data=cleanedData)
+summary(male.aov)
+```
+```{r}
+white.aov = aov(bwght ~ white, data=cleanedData)
+summary(white.aov)
+```
+```{r}
+boxplot(bwght~parity, data = cleanedData, main='Comparison of Baby weight means by "Parity"')
+```
+
+
+```{r}
+parity.aov = aov(bwght ~ parity, data=cleanedData)
+summary(parity.aov)
+```
+
+```{r}
+# Conduct simple regression models for all remaining variables
+
+SLRObjects = lapply( select(cleanedData, -c('bwght')), function(x) lm(cleanedData$bwght ~ x))
+
+```
+
+```{r}
+# Conduct Multiple Linear Regression with all variables
+
+linearRegression <- lm(bwght~., data=cleanedData)
+summary(linearRegression)
+
+```
+
+```{r}
+# Check for VIF and Heteroskedasticity
+
+bptest(linearRegression)
+VIF(linearRegression)
+
+```
+
+```{r, fig.width=5, fig.height=25}
+# Make qq plots of all residuals for all the regressions conducted
+par(mfrow=c(7,1))
+
+qqnorm(resid(SLRObjects$faminc), main = 'Residual QQ-plot for Family Income')
+qqline(resid(SLRObjects$faminc), col='red')
+
+qqnorm(resid(SLRObjects$fatheduc), main = 'Residual QQ-plot for Father Education')
+qqline(resid(SLRObjects$fatheduc), col='red')
+
+qqnorm(resid(SLRObjects$motheduc), main = 'Residual QQ-plot for Mother Education')
+qqline(resid(SLRObjects$motheduc), col='red')
+
+qqnorm(resid(SLRObjects$parity), main = 'Residual QQ-plot for Parity')
+qqline(resid(SLRObjects$parity), col='red')
+
+qqnorm(resid(SLRObjects$male), main = 'Residual QQ-plot for Male')
+qqline(resid(SLRObjects$male), col='red')
+
+qqnorm(resid(SLRObjects$white), main = 'Residual QQ-plot for White')
+qqline(resid(SLRObjects$white), col='red')
+
+qqnorm(resid(SLRObjects$cigs), main = 'Residual QQ-plot for Cigs')
+qqline(resid(SLRObjects$cigs), col='red')
+
+```
+```{r}
+qqnorm(resid(linearRegression), main = 'Residual QQ-plot for MLR')
+qqline(resid(linearRegression), col='red')
+```
+
+```{r}
+# Explain Beta Coefficients for all the regressions
+
+
+```
+
