@@ -33,6 +33,8 @@ bw
 cleanedData <- select(bw, -c("packs", "bwghtlbs", "lbwght", "lfaminc", "cigtax", "cigprice"))
 cleanedData$male = as.factor(cleanedData$male)
 cleanedData$white = as.factor(cleanedData$white)
+cleanedData$bwght = as.numeric(cleanedData$bwght)
+cleanedData$faminc = as.numeric(cleanedData$faminc)
 cleanedData = na.omit(cleanedData)
 
 str(cleanedData)
@@ -40,12 +42,14 @@ str(cleanedData)
 ```{r}
 # Make a correlation scatterplot with lowess lines
 categoricalVariables = c('male', 'white')
-correlationData = select(cleanedData, -categoricalVariables)
+correlationData = select(cleanedData, -all_of(categoricalVariables))
 pairs(~bwght + faminc + fatheduc + motheduc + parity ,data=correlationData,
    main="Scatterplot Matrix")
 ```
 
-```{r, fig.width=10, fig.height=10}
+# Testing for Correlations with the Numerical Variables
+
+```{r, fig.width=8, fig.height=8}
 
 correlationData.r <- abs(cor(correlationData)) # get correlations
 correlationData.colors <- dmat.color(correlationData.r) # get colors
@@ -55,7 +59,7 @@ correlationData.ordered <- order.single(correlationData.r)
 cpairs(correlationData, correlationData.ordered, panel.colors=correlationData.colors, gap=.1, 
 main="Scatterplot Matrix" )
 ```
-
+# ANOVA for all Categorical Variables
 
 ```{r}
 # Conduct ANOVA for all categorical variables
@@ -82,6 +86,7 @@ boxplot(bwght~parity, data = cleanedData, main='Comparison of Baby weight means 
 parity.aov = aov(bwght ~ parity, data=cleanedData)
 summary(parity.aov)
 ```
+# Conducting Simple Linear Regression for all the Independent Variables
 
 ```{r}
 # Conduct simple regression models for all remaining variables
@@ -90,6 +95,8 @@ SLRObjects = lapply( select(cleanedData, -c('bwght')), function(x) lm(cleanedDat
 
 ```
 
+# Conducting Multiple Linear Regression
+
 ```{r}
 # Conduct Multiple Linear Regression with all variables
 
@@ -97,7 +104,7 @@ linearRegression <- lm(bwght~., data=cleanedData)
 summary(linearRegression)
 
 ```
-
+# Checking for Variance Inflation Factor and Heteroskedasticity
 ```{r}
 # Check for VIF and Heteroskedasticity
 
@@ -105,6 +112,7 @@ bptest(linearRegression)
 VIF(linearRegression)
 
 ```
+# QQ-plots of all the Regressions run
 
 ```{r, fig.width=5, fig.height=25}
 # Make qq plots of all residuals for all the regressions conducted
@@ -137,9 +145,21 @@ qqnorm(resid(linearRegression), main = 'Residual QQ-plot for MLR')
 qqline(resid(linearRegression), col='red')
 ```
 
-```{r}
 # Explain Beta Coefficients for all the regressions
 
+when the family income increases by 1 unit then, on average, the birth weight of the baby increases by 0.08965 grams, ceteris paribus
+
+when the father's education increases by 1 unit then, on average, the birth weight of the baby increases by 0.6102 grams, ceteris paribus
+
+when the mother's education increases by 1 unit then, on average, the birth weight of the baby increases by 0.3755 grams, ceteris paribus
+
+when the number of children already born increases by 1 unit then, on average, the birth weight of the baby increases by 1.601 grams, ceteris paribus
+
+when the child's sex is male, on average, the birth weight of the baby increases by 3.759 grams, ceteris paribus
+
+when the child's race is white then, on average, the birth weight of the baby increases by 4.865 grams, ceteris paribus
+
+when the number of cigs smoked by the mother while pregnant increases by 1 unit then, on average, the birth weight of the baby increases by -0.6203 grams, ceteris paribus
 
 ```
 
