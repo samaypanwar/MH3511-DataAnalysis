@@ -26,46 +26,62 @@ bw <- na.omit(bwght)
 
 
 ```{r}
-bw
+head(bw)
 ```
+
 
 ```{r}
-cleanedData <- select(bw, -c("packs", "bwghtlbs", "lbwght", "lfaminc", "cigtax", "cigprice"))
-cleanedData$male = as.factor(cleanedData$male)
-cleanedData$white = as.factor(cleanedData$white)
-cleanedData$bwght = as.numeric(cleanedData$bwght)
-cleanedData$faminc = as.numeric(cleanedData$faminc)
-cleanedData = na.omit(cleanedData)
+cleanedData <- select(bw, -c("packs", "bwghtlbs", "lbwght", "lfaminc", "cigtax", "cigprice")) # removing all the variables that we will not be using in our data analysis
+cleanedData$male = as.factor(cleanedData$male)          # Male is a categorical variable that takes on the value 1 when the child born is Male
+cleanedData$white = as.factor(cleanedData$white)        # White is a categorical variable that takes on the value of 1 when the child born is White
+cleanedData$bwght = as.numeric(cleanedData$bwght)       # Changing the birth weight of the baby(in grams) into a numerical data type
+cleanedData$faminc = as.numeric(cleanedData$faminc)     # Changing the family income of the baby's family into numerical data type
+cleanedData = na.omit(cleanedData)                      # Omitting all the NA values present in our data
 
 str(cleanedData)
+head(cleanedData)
 ```
+
+
 ```{r}
 # Make a correlation scatterplot with lowess lines
 categoricalVariables = c('male', 'white')
 correlationData = select(cleanedData, -all_of(categoricalVariables))
 pairs(~bwght + faminc + fatheduc + motheduc + parity ,data=correlationData,
-   main="Scatterplot Matrix")
+      main="Scatterplot Matrix",
+  lower.panel = panel.smooth)
 ```
 
-# Testing for Correlations with the Numerical Variables
+## Testing for Correlations with the Numerical Variables
 
 ```{r, fig.width=8, fig.height=8}
 
-correlationData.r <- abs(cor(correlationData)) # get correlations
-correlationData.colors <- dmat.color(correlationData.r) # get colors
+correlationData.r <- abs(cor(correlationData))              # Get correlations of all the data values
+correlationData.colors <- dmat.color(correlationData.r)     # Get colors
 # reorder variables so those with highest correlation
 # are closest to the diagonal
 correlationData.ordered <- order.single(correlationData.r)
 cpairs(correlationData, correlationData.ordered, panel.colors=correlationData.colors, gap=.1, 
-main="Scatterplot Matrix" )
+       main="Scatterplot Matrix", lower.panel = panel.smooth )
 ```
-# ANOVA for all Categorical Variables
+## ANOVA for all Categorical Variables
+
+
+```{r}
+# Checking if the mean of the baby birth weight can be assumed to be the same for all groups of categoricalVariables - male, white
+
+lapply(select(cleanedData, all_of(categoricalVariables)), function(categoricalVariable) t.test(cleanedData$bwght ~ categoricalVariable, mu=0, pair=FALSE))
+
+# We obseve a low pvalue for both the tests and therefore the means of the bwght cannot be assumed to be the same for different categories
+```
+
 
 ```{r}
 # Conduct ANOVA for all categorical variables
 par(mfrow=c(1,2))
-boxplot(bwght~male, data = cleanedData, main='Comparison of Baby weight means by "Male"', cex.main=0.7)
-boxplot(bwght~white, data = cleanedData, main='Comparison of Baby weight means by "White"', cex.main=0.7)
+boxplot(bwght~male, data = cleanedData, main='Comparison of Baby weight means by "Male"', cex.main=0.7, names=c('Female', 'Male'))
+boxplot(bwght~white, data = cleanedData, main='Comparison of Baby weight means by "White"', cex.main=0.7, names=c('Non-white', 'White'))
+
 ```
 
 
@@ -86,16 +102,16 @@ boxplot(bwght~parity, data = cleanedData, main='Comparison of Baby weight means 
 parity.aov = aov(bwght ~ parity, data=cleanedData)
 summary(parity.aov)
 ```
-# Conducting Simple Linear Regression for all the Independent Variables
+## Conducting Simple Linear Regression for all the Independent Variables
 
 ```{r}
-# Conduct simple regression models for all remaining variables
+# Conduct simple regression models for all remaining variables, this allows us to observe the relationship between all the variables and the bwght 
 
 SLRObjects = lapply( select(cleanedData, -c('bwght')), function(x) lm(cleanedData$bwght ~ x))
 
 ```
 
-# Conducting Multiple Linear Regression
+## Conducting Multiple Linear Regression
 
 ```{r}
 # Conduct Multiple Linear Regression with all variables
@@ -104,15 +120,17 @@ linearRegression <- lm(bwght~., data=cleanedData)
 summary(linearRegression)
 
 ```
-# Checking for Variance Inflation Factor and Heteroskedasticity
+## Checking for Variance Inflation Factor and Heteroskedasticity
 ```{r}
 # Check for VIF and Heteroskedasticity
 
-bptest(linearRegression)
-VIF(linearRegression)
+bptest(linearRegression) # Utilizing th Breush-Pagan test to test for the presence of Homoskedasticity in our data
+VIF(linearRegression)    # Checking if there exists a high degree of multicollinearity in our data
 
+# From the results of the two tests, we can conclude that we can safely assume that Heteroskedasticity is not present in our data and
+# There does not exist high multicollinearity in our data. Hence the standard errors and slope parameters derived from the MLR above can be assumed to be correct
 ```
-# QQ-plots of all the Regressions run
+## QQ-plots of all the Regressions run
 
 ```{r, fig.width=5, fig.height=25}
 # Make qq plots of all residuals for all the regressions conducted
@@ -139,13 +157,15 @@ qqline(resid(SLRObjects$white), col='red')
 qqnorm(resid(SLRObjects$cigs), main = 'Residual QQ-plot for Cigs')
 qqline(resid(SLRObjects$cigs), col='red')
 
+# Almost all the residuals have fat lower tails and there exist a single data point on the upper tail that can be considered to be an outlier
+
 ```
 ```{r}
 qqnorm(resid(linearRegression), main = 'Residual QQ-plot for MLR')
 qqline(resid(linearRegression), col='red')
 ```
 
-# Explain Beta Coefficients for all the regressions
+## Explain Beta Coefficients for all the regressions
 
 when the family income increases by 1 unit then, on average, the birth weight of the baby increases by 0.08965 grams, ceteris paribus
 
