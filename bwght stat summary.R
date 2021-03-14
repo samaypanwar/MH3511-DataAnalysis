@@ -19,7 +19,6 @@ bwght$male = as.factor(bwght$male)
 bwght$white = as.factor(bwght$white)
 bwght$bwght = as.numeric(bwght$bwght)
 bwght$parity = as.factor(bwght$parity)
-bwght$cigs = as.factor(bwght$cigs)
 
 
 ############################
@@ -75,6 +74,17 @@ ggplot(bwght)+geom_boxplot(mapping=aes(x=parity,y=bwght))
 ggplot(bwght)+geom_boxplot(mapping=aes(x=cigs,y=bwght))
 #Plotting the boxplot shows quite a variation, but there doesn't seem to exist a direct correlation.
 
+#plot for all participants
+ggplot(bwght)+
+  geom_histogram(aes(cigs))
+
+#isolating smokers
+smokers <- bwght[bwght$cigs != 0,]
+boxplot(smokers$cigs)
+ggplot(smokers)+
+  geom_histogram(aes(cigs), bins = 15)
+median(smokers$cigs)
+
 #some data exploration for cigs and cigs pricing and taxes
 ggplot(bwght)+
   geom_jitter(mapping = aes(x = cigs, y = bwght,col = cigprice))+
@@ -97,17 +107,17 @@ ggplot(bwght)+geom_jitter(mapping = aes(x = bwght, y = faminc), col = 'slategrey
 ggplot(bwght)+geom_jitter(mapping = aes(x = bwght, y = lfaminc), col = 'slategrey')
 #no trend
 
-#don't mind me I playing around with the plots
-#bwght$faminc <- as.factor(bwght$faminc)
-#ggplot(bwght, aes(x = bwght, y = faminc, fill = ..x..))+
-#  geom_density_ridges_gradient(scale = 3)+
-#  scale_fill_viridis(option = "C")+ 
-#  theme_ridges()+
-#  theme(legend.position = "none")
 
 #further data exploration with income
 ggplot(bwght)+geom_jitter(mapping = aes(x = bwght, y = faminc, col = white))
 #whites seems to have a higher income
+
+#plot for purely income
+
+ggplot(bwght)+
+  geom_histogram(aes(faminc))+
+  xlab('family income')
+boxplot(bwght$faminc)
 
 ############
 #education
@@ -115,11 +125,25 @@ bwght$fatheduc = as.factor(bwght$fatheduc)
 ggplot(bwght)+
   geom_boxplot(aes(x = fatheduc, y = bwght))
 #does not seem to have much trend
-
 bwght$motheduc = as.factor(bwght$motheduc)
 ggplot(bwght)+
   geom_boxplot(aes(x = motheduc, y = bwght))
 #also no trend
+
+
+#plot for purely fatheduc
+ggplot(bwght)+
+  geom_histogram(aes(fatheduc), binwidth = 1)+
+  xlab("Father's education level")
+boxplot(bwght$fatheduc)
+median(bwght$fatheduc, na.rm = TRUE)
+
+#plot for purely motheduc
+ggplot(bwght)+
+  geom_histogram(aes(motheduc), binwidth = 1)+
+  xlab("Mother's education level")
+boxplot(bwght$motheduc)
+median(bwght$motheduc, na.rm = TRUE)
 
 #look at max education of parents
 bwght$motheduc = as.numeric(bwght$motheduc)
