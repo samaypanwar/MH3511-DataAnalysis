@@ -1,14 +1,18 @@
 ---
 title: "R Notebook"
 output: html_notebook
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
-setwd('C:/Users/Samay Panwar/Documents/GitHub/MH3511-DataAnalysis')
-#install.packages("wooldridge")
-#install.packages("lmtest")
-#install.packages('regclass')
-#install.packages('gclus')
+# install.packages("wooldridge")
+# install.packages("dpylr")
+# install.packages("lmtest")
+# install.packages("regclass")
+# install.packages("tidyverse")
+# install.packages("gclus")
+# install.packages("crayon")
 
 library(wooldridge)
 library(dplyr)
@@ -16,12 +20,15 @@ library(lmtest)
 library(regclass)
 library(tidyverse)
 library(gclus)
+library(crayon)
 ```
+
+
 ```{r}
 data('bwght')
 
-write.csv(bwght, "C:/Users/Samay Panwar/Documents/GitHub/MH3511-DataAnalysis/bwght.csv")
 bw <- na.omit(bwght)
+bw
 ```
 
 
@@ -31,12 +38,23 @@ head(bw)
 
 
 ```{r}
-cleanedData <- select(bw, -c("packs", "bwghtlbs", "lbwght", "lfaminc", "cigtax", "cigprice")) # removing all the variables that we will not be using in our data analysis
-cleanedData$male = as.factor(cleanedData$male)          # Male is a categorical variable that takes on the value 1 when the child born is Male
-cleanedData$white = as.factor(cleanedData$white)        # White is a categorical variable that takes on the value of 1 when the child born is White
-cleanedData$bwght = as.numeric(cleanedData$bwght)       # Changing the birth weight of the baby(in grams) into a numerical data type
-cleanedData$faminc = as.numeric(cleanedData$faminc)     # Changing the family income of the baby's family into numerical data type
-cleanedData = na.omit(cleanedData)                      # Omitting all the NA values present in our data
+# removing all the variables that we will not be using in our data analysis
+cleanedData <- select(bw, -c("packs", "bwghtlbs", "lbwght", "lfaminc", "cigtax", "cigprice")) 
+
+ # Male is a categorical variable that takes on the value 1 when the child born is Male
+cleanedData$male = as.factor(cleanedData$male) 
+
+# White is a categorical variable that takes on the value of 1 when the child born is White
+cleanedData$white = as.factor(cleanedData$white)
+
+# Changing the birth weight of the baby(in grams) into a numerical data type
+cleanedData$bwght = as.numeric(cleanedData$bwght)  
+
+# Changing the family income of the baby's family into numerical data type
+cleanedData$faminc = as.numeric(cleanedData$faminc)    
+
+# Omitting all the NA values present in our data
+cleanedData = na.omit(cleanedData)                    
 
 str(cleanedData)
 head(cleanedData)
@@ -47,9 +65,24 @@ head(cleanedData)
 # Make a correlation scatterplot with lowess lines
 categoricalVariables = c('male', 'white')
 correlationData = select(cleanedData, -all_of(categoricalVariables))
-pairs(~bwght + faminc + fatheduc + motheduc + parity ,data=correlationData,
-      main="Scatterplot Matrix",
-  lower.panel = panel.smooth)
+
+# Make panels for correlation coefficients
+panel.cor <- function(x, y){
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- round(cor(x, y), digits=2)
+    txt <- paste0("r = ", r)
+    cex.cor <- 0.8/strwidth(txt)
+    if (r >= 0.5) {text(0.5, 0.5, txt, cex = cex.cor * r, col="red")}
+    else {text(0.5, 0.5, txt, cex = cex.cor * r, col="blue")}
+    
+}
+
+# Generate the scatterplot matrix    
+pairs(~bwght + faminc + fatheduc + motheduc + parity + cigs,
+      data=correlationData, 
+      upper.panel = panel.smooth,
+      lower.panel = panel.cor)
 ```
 
 ## Testing for Correlations with the Numerical Variables
