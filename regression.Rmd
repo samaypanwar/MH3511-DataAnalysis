@@ -60,9 +60,10 @@ str(cleanedData)
 head(cleanedData)
 ```
 
+## Scatter Plot Matrix for Numerical Variables
 
 ```{r}
-# Make a correlation scatterplot with lowess lines
+# Make a correlation scatter plot with lowess lines
 categoricalVariables = c('male', 'white')
 correlationData = select(cleanedData, -all_of(categoricalVariables))
 
@@ -72,69 +73,62 @@ panel.cor <- function(x, y){
     par(usr = c(0, 1, 0, 1))
     r <- round(cor(x, y), digits=2)
     txt <- paste0("r = ", r)
-    cex.cor <- 0.8/strwidth(txt)
-    if (r >= 0.5) {text(0.5, 0.5, txt, cex = cex.cor * r, col="red")}
-    else {text(0.5, 0.5, txt, cex = cex.cor * r, col="blue")}
+    if (r >= 0.5 | r<= -0.5) {text(0.5, 0.5, txt, cex = 1, col="red")}
+    else {text(0.5, 0.5, txt, cex = 1, col="blue")}
     
 }
 
-# Generate the scatterplot matrix    
+# Generate the scatter plot matrix    
 pairs(~bwght + faminc + fatheduc + motheduc + parity + cigs,
       data=correlationData, 
       upper.panel = panel.smooth,
       lower.panel = panel.cor)
 ```
 
-## Testing for Correlations with the Numerical Variables
-
-```{r, fig.width=8, fig.height=8}
-
-correlationData.r <- abs(cor(correlationData))              # Get correlations of all the data values
-correlationData.colors <- dmat.color(correlationData.r)     # Get colors
-# reorder variables so those with highest correlation
-# are closest to the diagonal
-correlationData.ordered <- order.single(correlationData.r)
-cpairs(correlationData, correlationData.ordered, panel.colors=correlationData.colors, gap=.1, 
-       main="Scatterplot Matrix", lower.panel = panel.smooth )
-```
-## ANOVA for all Categorical Variables
-
+## Two-Sample Welch T-Tests for Categorical Variables 'male' and 'white'
 
 ```{r}
-# Checking if the mean of the baby birth weight can be assumed to be the same for all groups of categoricalVariables - male, white
+# Boxplots of variables 'male' and 'white'
+boxplot(bwght~male, data = cleanedData, cex.main=0.7, names=c('Female', 'Male'))
+boxplot(bwght~white, data = cleanedData, cex.main=0.7, names=c('Non-white', 'White'))
 
-lapply(select(cleanedData, all_of(categoricalVariables)), function(categoricalVariable) t.test(cleanedData$bwght ~ categoricalVariable, mu=0, pair=FALSE))
+# Normality Test for the Sample of Female Birth Weights
+shapiro.test(cleanedData$bwght[cleanedData$male==0])
 
-# We obseve a low pvalue for both the tests and therefore the means of the bwght cannot be assumed to be the same for different categories
+# Normality Test for the Sample of Male Birth Weights
+shapiro.test(cleanedData$bwght[cleanedData$male==1])
+
+# Comparison of Variances of Male and Female Birth Weights
+var.test(cleanedData$bwght ~ cleanedData$male)
+
+# Comparison of Means of Male and Female Birth Weights
+t.test(cleanedData$bwght ~ cleanedData$male, var.equal=TRUE)
+
+# Normality Test for the Sample of Non-White Birth Weights
+shapiro.test(cleanedData$bwght[cleanedData$white==0])
+
+# Normality Test for the Sample of White Birth Weights
+shapiro.test(cleanedData$bwght[cleanedData$white==1])
+
+# Comparison of Variances of White and Non-White Birth Weights
+var.test(cleanedData$bwght ~ cleanedData$white)
+
+# Comparison of Means of White and Non-White Birth Weights
+t.test(cleanedData$bwght ~ cleanedData$white, var.equal=TRUE)
 ```
 
+## One-Way ANOVA Test for Categorical Variable 'parity'
 
 ```{r}
-# Conduct ANOVA for all categorical variables
-par(mfrow=c(1,2))
-boxplot(bwght~male, data = cleanedData, main='Comparison of Baby weight means by "Male"', cex.main=0.7, names=c('Female', 'Male'))
-boxplot(bwght~white, data = cleanedData, main='Comparison of Baby weight means by "White"', cex.main=0.7, names=c('Non-white', 'White'))
+# View unique values in variable 'parity'
+sort(unique(cleanedData$parity), decreasing=FALSE)
 
-```
+boxplot(bwght~parity, data = cleanedData)
 
-
-```{r}
-male.aov = aov(bwght ~ male, data=cleanedData)
-summary(male.aov)
-```
-```{r}
-white.aov = aov(bwght ~ white, data=cleanedData)
-summary(white.aov)
-```
-```{r}
-boxplot(bwght~parity, data = cleanedData, main='Comparison of Baby weight means by "Parity"')
-```
-
-
-```{r}
 parity.aov = aov(bwght ~ parity, data=cleanedData)
 summary(parity.aov)
 ```
+
 ## Conducting Simple Linear Regression for all the Independent Variables
 
 ```{r}
