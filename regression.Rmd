@@ -209,48 +209,20 @@ plot(fitted(MLR.reduced), residuals(MLR.reduced), ylab='Residuals', xlab='Fitted
 plot(cleanedData$faminc, residuals(MLR.reduced), ylab='Residuals', xlab='X1')
 plot(cleanedData$fatheduc, residuals(MLR.reduced), ylab='Residuals', xlab='X2')
 
-# Reduced MLR model 1 (with interaction effects)
-MLR.reduced1 <- lm(bwght~faminc+fatheduc+faminc*fatheduc, data=cleanedData)
-summary(MLR.reduced1)
-
-par(mfrow=c(1,2))
-plot(fitted(MLR.reduced1), residuals(MLR.reduced1), ylab='Residuals', xlab='Fitted Values')
-plot(cleanedData$faminc*cleanedData$fatheduc, residuals(MLR.reduced1), ylab='Residuals', xlab='X1X2')
+# # Reduced MLR model 1 (with interaction effects)
+# MLR.reduced1 <- lm(bwght~faminc+fatheduc+faminc*fatheduc, data=cleanedData)
+# summary(MLR.reduced1)
+# 
+# par(mfrow=c(1,2))
+# plot(fitted(MLR.reduced1), residuals(MLR.reduced1), ylab='Residuals', xlab='Fitted Values')
+# plot(cleanedData$faminc*cleanedData$fatheduc, residuals(MLR.reduced1), ylab='Residuals', xlab='X1X2')
 ```
 
-## Checking for Variance Inflation Factor and Heteroskedasticity
+## Checking for Variance Inflation Factor and Heteroscedasticity
+
 ```{r}
-# Check for VIF and Heteroskedasticity
+# Tests for VIF and Heteroskedasticity
 
-bptest(linearRegression) # Utilizing th Breush-Pagan test to test for the presence of Homoskedasticity in our data
-VIF(linearRegression)    # Checking if there exists a high degree of multicollinearity in our data
-
-# From the results of the two tests, we can conclude that we can safely assume that Heteroskedasticity is not present in our data and
-# There does not exist high multicollinearity in our data. Hence the standard errors and slope parameters derived from the MLR above can be assumed to be correct
+VIF(MLR.reduced)    # Checking if there exists a high degree of multicollinearity in our data
+bptest(MLR.reduced) # Utilising the Breush-Pagan test to test for the presence of Homoscedasticity in our data
 ```
-## QQ-plots of all the Regressions 
-
-```{r, fig.width=5, fig.height=25}
-# Make qq plots of all residuals for all the regressions conducted
-par(mfrow=c(7,1))
-
-# Residual QQ-plot for family income
-qqnorm(resid(linReg.faminc), main = "")
-qqline(resid(linReg.faminc), col='red')
-
-# Residual QQ-plot for number of years of father's education
-qqnorm(resid(linReg.fatheduc), main = "")
-qqline(resid(linReg.fatheduc), col='red')
-
-# Residual QQ-plot for number of years of motherucation
-qqnorm(resid(linReg.motheduc), main = "")
-qqline(resid(linReg.motheduc), col='red')
-
-# Residual QQ-plot for number of cigarettes smoked by the mother during pregnancy
-qqnorm(resid(SLRObjects$cigs), main = "")
-qqline(resid(SLRObjects$cigs), col='red')
-
-qqnorm(resid(linearRegression), main = "")
-qqline(resid(linearRegression), col='red')
-```
-
