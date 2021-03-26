@@ -27,12 +27,8 @@ library(crayon)
 ```{r}
 data('bwght')
 
-bw <- na.omit(bwght)
-bw
-```
+bw <- read.csv("C:/Users/angro/Desktop/AY 2020-2021/Year 3 Semester 2/MH3511 Data Analysis with Computer/Project/cleanedData.csv", header = TRUE)
 
-
-```{r}
 head(bw)
 ```
 
@@ -54,7 +50,13 @@ cleanedData$bwght = as.numeric(cleanedData$bwght)
 cleanedData$faminc = as.numeric(cleanedData$faminc)    
 
 # Omitting all the NA values present in our data
-cleanedData = na.omit(cleanedData)                    
+cleanedData = na.omit(cleanedData)     
+
+# Create new factor variable 'smoker' takes on the value 1 when the child's mother is a smoker
+cleanedData$smoker = ifelse(cleanedData$cigs==0, 0, 
+                            ifelse(cleanedData$cigs<10, 1, 
+                                   ifelse(cleanedData$cigs<25, 2, 3)))
+cleanedData$smoker = as.factor(cleanedData$smoker)
 
 str(cleanedData)
 head(cleanedData)
@@ -71,7 +73,7 @@ correlationData = select(cleanedData, -all_of(categoricalVariables))
 panel.cor <- function(x, y){
     usr <- par("usr"); on.exit(par(usr))
     par(usr = c(0, 1, 0, 1))
-    r <- round(cor(x, y), digits=2)
+    r <- round(cor(x, y), 2)
     txt <- paste0("r = ", r)
     if (r >= 0.5 | r<= -0.5) {text(0.5, 0.5, txt, cex = 1, col="red")}
     else {text(0.5, 0.5, txt, cex = 1, col="blue")}
@@ -79,7 +81,7 @@ panel.cor <- function(x, y){
 }
 
 # Generate the scatter plot matrix    
-pairs(~bwght + faminc + fatheduc + motheduc + parity + cigs,
+pairs(~bwght + faminc + fatheduc + motheduc + cigs,
       data=correlationData, 
       upper.panel = panel.smooth,
       lower.panel = panel.cor)
@@ -92,28 +94,28 @@ pairs(~bwght + faminc + fatheduc + motheduc + parity + cigs,
 boxplot(bwght~male, data = cleanedData, cex.main=0.7, names=c('Female', 'Male'))
 boxplot(bwght~white, data = cleanedData, cex.main=0.7, names=c('Non-white', 'White'))
 
-# Normality Test for the Sample of Female Birth Weights
+# Normality test for the sample of female birth weights
 shapiro.test(cleanedData$bwght[cleanedData$male==0])
 
-# Normality Test for the Sample of Male Birth Weights
+# Normality test for the sample of male birth weights
 shapiro.test(cleanedData$bwght[cleanedData$male==1])
 
-# Comparison of Variances of Male and Female Birth Weights
+# Comparison of variances of male and female birth weights
 var.test(cleanedData$bwght ~ cleanedData$male)
 
-# Comparison of Means of Male and Female Birth Weights
+# Comparison of means of male and female birth weights
 t.test(cleanedData$bwght ~ cleanedData$male, var.equal=TRUE)
 
-# Normality Test for the Sample of Non-White Birth Weights
+# Normality test for the sample of non-white birth weights
 shapiro.test(cleanedData$bwght[cleanedData$white==0])
 
-# Normality Test for the Sample of White Birth Weights
+# Normality test for the sample of white birth weights
 shapiro.test(cleanedData$bwght[cleanedData$white==1])
 
-# Comparison of Variances of White and Non-White Birth Weights
+# Comparison of variances of white and non-white birth weights
 var.test(cleanedData$bwght ~ cleanedData$white)
 
-# Comparison of Means of White and Non-White Birth Weights
+# Comparison of means of white and non-white birth weights
 t.test(cleanedData$bwght ~ cleanedData$white, var.equal=TRUE)
 ```
 
@@ -123,30 +125,99 @@ t.test(cleanedData$bwght ~ cleanedData$white, var.equal=TRUE)
 # View unique values in variable 'parity'
 sort(unique(cleanedData$parity), decreasing=FALSE)
 
-boxplot(bwght~parity, data = cleanedData)
+# Box plot for birth weights across different birth orders
+boxplot(cleanedData$bwght~cleanedData$parity)
 
-parity.aov = aov(bwght ~ parity, data=cleanedData)
+# One-way ANOVA for birth weight against birth order
+parity.aov = aov(cleanedData$bwght ~ cleanedData$parity)
 summary(parity.aov)
+
+# Pairwise comparisons for birth weight against birth order
+pairwise.t.test(cleanedData$bwght, cleanedData$parity, p.adjust.method = "none")
+
+# Box plot for birth weights across different degrees of smoking during pregnancy
+boxplot(cleanedData$bwght~cleanedData$smoker)
+
+# One-way ANOVA for birth weight against different degrees of smoking during pregnancy
+parity.aov = aov(cleanedData$bwght ~ cleanedData$smoker)
+summary(parity.aov)
+
+# Pairwise comparisons for birth weight against different degrees of smoking during pregnancy
+pairwise.t.test(cleanedData$bwght, cleanedData$smoker, p.adjust.method = "none")
 ```
 
-## Conducting Simple Linear Regression for all the Independent Variables
+## Simple Linear Regression Models for Numerical Variables
 
 ```{r}
-# Conduct simple regression models for all remaining variables, this allows us to observe the relationship between all the variables and the bwght 
+# SLR Model between birth weight and family income 
+linReg.faminc <- lm(bwght~faminc, data=cleanedData)
+summary(linReg.faminc)
 
-SLRObjects = lapply( select(cleanedData, -c('bwght')), function(x) lm(cleanedData$bwght ~ x))
+# Residual plot for family income
+res.faminc<-linReg.faminc$res 
+plot(cleanedData$faminc, residual)
+abline(0,0)
+
+# Residual QQ-plot for family income
+qqnorm(resid(linReg.faminc), main = "")
+qqline(resid(linReg.faminc), col='red')
+
+# SLR Model between birth weight and number of years of father's education 
+linReg.fatheduc<- lm(bwght~fatheduc, data=cleanedData)
+summary(linReg.fatheduc)
+
+# Residual plot for number of years of father's education
+res.fatheduc<-linReg.fatheduc$res 
+plot(cleanedData$fatheduc, residual)
+abline(0,0)
+
+# Residual QQ-plot for number of years of father's education
+qqnorm(resid(linReg.fatheduc), main = "")
+qqline(resid(linReg.fatheduc), col='red')
+
+# SLR Model between birth weight and number of years of mother's education 
+linReg.motheduc <- lm(bwght~motheduc, data=cleanedData)
+summary(linReg.motheduc)
+
+# Residual plot for number of years of mother's education
+res.motheduc<-linReg.motheduc$res 
+plot(cleanedData$motheduc, residual)
+abline(0,0)
+
+# Residual QQ-plot for number of years of mother's education
+qqnorm(resid(linReg.motheduc), main = "")
+qqline(resid(linReg.motheduc), col='red')
 
 ```
 
-## Conducting Multiple Linear Regression
+## Multiple Linear Regression for Numerical Variables
 
 ```{r}
-# Conduct Multiple Linear Regression with all variables
+# Full MLR model with all numerical variables
+MLR <- lm(bwght~faminc+fatheduc+motheduc, data=cleanedData)
+summary(MLR)
 
-linearRegression <- lm(bwght~., data=cleanedData)
-summary(linearRegression)
+# Stepwise Feature Selection
+step(MLR, direction="backward")
 
+# Reduced MLR model
+MLR.reduced <- lm(bwght~faminc+fatheduc, data=cleanedData)
+summary(MLR.reduced)
+
+par(mfrow=c(2,2))
+plot(fitted(MLR.reduced), residuals(MLR.reduced), ylab='Residuals', xlab='Fitted Values')
+plot(cleanedData$faminc, residuals(MLR.reduced), ylab='Residuals', xlab='X1')
+plot(cleanedData$fatheduc, residuals(MLR.reduced), ylab='Residuals', xlab='X2')
+
+# Reduced MLR model 1 (with interaction effects)
+MLR.reduced1 <- lm(bwght~faminc+fatheduc+faminc*fatheduc, data=cleanedData)
+summary(MLR.reduced1)
+
+par(mfrow=c(1,2))
+plot(fitted(MLR.reduced1), residuals(MLR.reduced1), ylab='Residuals', xlab='Fitted Values')
+plot(cleanedData$faminc*cleanedData$fatheduc, residuals(MLR.reduced1), ylab='Residuals', xlab='X1X2')
 ```
+
 ## Checking for Variance Inflation Factor and Heteroskedasticity
 ```{r}
 # Check for VIF and Heteroskedasticity
@@ -157,56 +228,29 @@ VIF(linearRegression)    # Checking if there exists a high degree of multicollin
 # From the results of the two tests, we can conclude that we can safely assume that Heteroskedasticity is not present in our data and
 # There does not exist high multicollinearity in our data. Hence the standard errors and slope parameters derived from the MLR above can be assumed to be correct
 ```
-## QQ-plots of all the Regressions run
+## QQ-plots of all the Regressions 
 
 ```{r, fig.width=5, fig.height=25}
 # Make qq plots of all residuals for all the regressions conducted
 par(mfrow=c(7,1))
 
-qqnorm(resid(SLRObjects$faminc), main = 'Residual QQ-plot for Family Income')
-qqline(resid(SLRObjects$faminc), col='red')
+# Residual QQ-plot for family income
+qqnorm(resid(linReg.faminc), main = "")
+qqline(resid(linReg.faminc), col='red')
 
-qqnorm(resid(SLRObjects$fatheduc), main = 'Residual QQ-plot for Father Education')
-qqline(resid(SLRObjects$fatheduc), col='red')
+# Residual QQ-plot for number of years of father's education
+qqnorm(resid(linReg.fatheduc), main = "")
+qqline(resid(linReg.fatheduc), col='red')
 
-qqnorm(resid(SLRObjects$motheduc), main = 'Residual QQ-plot for Mother Education')
-qqline(resid(SLRObjects$motheduc), col='red')
+# Residual QQ-plot for number of years of motherucation
+qqnorm(resid(linReg.motheduc), main = "")
+qqline(resid(linReg.motheduc), col='red')
 
-qqnorm(resid(SLRObjects$parity), main = 'Residual QQ-plot for Parity')
-qqline(resid(SLRObjects$parity), col='red')
-
-qqnorm(resid(SLRObjects$male), main = 'Residual QQ-plot for Male')
-qqline(resid(SLRObjects$male), col='red')
-
-qqnorm(resid(SLRObjects$white), main = 'Residual QQ-plot for White')
-qqline(resid(SLRObjects$white), col='red')
-
-qqnorm(resid(SLRObjects$cigs), main = 'Residual QQ-plot for Cigs')
+# Residual QQ-plot for number of cigarettes smoked by the mother during pregnancy
+qqnorm(resid(SLRObjects$cigs), main = "")
 qqline(resid(SLRObjects$cigs), col='red')
 
-# Almost all the residuals have fat lower tails and there exist a single data point on the upper tail that can be considered to be an outlier
-
-```
-```{r}
-qqnorm(resid(linearRegression), main = 'Residual QQ-plot for MLR')
+qqnorm(resid(linearRegression), main = "")
 qqline(resid(linearRegression), col='red')
-```
-
-## Explain Beta Coefficients for all the regressions
-
-when the family income increases by 1 unit then, on average, the birth weight of the baby increases by 0.08965 grams, ceteris paribus
-
-when the father's education increases by 1 unit then, on average, the birth weight of the baby increases by 0.6102 grams, ceteris paribus
-
-when the mother's education increases by 1 unit then, on average, the birth weight of the baby increases by 0.3755 grams, ceteris paribus
-
-when the number of children already born increases by 1 unit then, on average, the birth weight of the baby increases by 1.601 grams, ceteris paribus
-
-when the child's sex is male, on average, the birth weight of the baby increases by 3.759 grams, ceteris paribus
-
-when the child's race is white then, on average, the birth weight of the baby increases by 4.865 grams, ceteris paribus
-
-when the number of cigs smoked by the mother while pregnant increases by 1 unit then, on average, the birth weight of the baby increases by -0.6203 grams, ceteris paribus
-
 ```
 
