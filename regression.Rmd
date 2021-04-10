@@ -180,6 +180,9 @@ panel.cor <- function(x, y){
     
 }
 
+numericVariables <- c('bwght', 'faminc', 'fatheduc', 'motheduc')
+correlationData = select(cleanedData, all_of(numericVariables))
+
 # Generate the scatter plot matrix    
 pairs(~bwght + faminc + fatheduc + motheduc,
       data=correlationData, 
