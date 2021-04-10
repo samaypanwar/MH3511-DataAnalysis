@@ -6,36 +6,149 @@ editor_options:
 ---
 
 ```{r}
-# install.packages("wooldridge")
-# install.packages("dpylr")
-# install.packages("lmtest")
-# install.packages("regclass")
-# install.packages("tidyverse")
-# install.packages("gclus")
-# install.packages("crayon")
-
 library(wooldridge)
 library(dplyr)
 library(lmtest)
 library(regclass)
 library(tidyverse)
 library(gclus)
+library(ggplot2)
 library(crayon)
+
+data("bwght")
+
+# Basic Data Summaries
+str(bwght)
+summary(bwght)
+
+bwght$male = as.factor(bwght$male)
+bwght$white = as.factor(bwght$white)
+bwght$bwght = as.numeric(bwght$bwght)
+bwght$parity = as.factor(bwght$parity)
+
+bwght = na.omit(bwght) 
+str(bwght)
+
+# Analysis of variable 'bwght'
+summary(bwght$bwght)
+xbar <- mean(bwght$bwght)
+s <- sd(bwght$bwght)
+
+hist(bwght$bwght)
+boxplot(bwght$bwght)
+boxplot(bwght$lbwght)
+boxplot(bwght$bwghtlbs)
+
+# Distribution of 'bwght'
+xpt = seq(0,200, by=0.03)
+n_den <- dnorm(xpt, mean(bwght$bwght), sd(bwght$bwght))
+ypt <- n_den * length(bwght$bwght) * 5
+ggplot()+
+  geom_histogram(data = bwght,mapping=aes(bwght), binwidth = 5)+
+  geom_line(aes(x = xpt, y = ypt), col = 'red')
+
+# Test for Normality
+qqnorm(bwght$bwght)
+qqline(bwght$bwght, col = 'red')
+shapiro.test(bwght$bwght)
+# p-value = 5.09e-15
+
+# Removing outliers from 'bwght'
+boxplot(bwght$bwght,plot=FALSE)$out #26 outliers
+outliers = boxplot(bwght$bwght,plot=FALSE)$out
+bwght = bwght[-which(bwght$bwght%in%outliers),]
+str(bwght)
+boxplot(bwght$bwght,main="Boxplot of cleaned bwght")
+
+# Test for Normality
+xbar <- mean(bwght$bwght)
+s <- sd(bwght$bwght)
+xpt = seq(0,170, by=0.03)
+n_den <- dnorm(xpt, xbar, s)
+ypt <- n_den * length(bwght$bwght) * 5
+ggplot()+ geom_histogram(data = bwght,mapping=aes(bwght), binwidth = 5)+ geom_line(aes(x = xpt, y = ypt), col = 'red')
+
+# Test for Normality
+qqnorm(bwght$bwght)
+qqline(bwght$bwght, col = 'red')
+shapiro.test(bwght$bwght)
+# p-value = 0.07708
+
+# Plot for variable 'faminc'
+ggplot(bwght)+
+  geom_histogram(aes(faminc))+
+  xlab('family income')
+boxplot(bwght$faminc)
+
+# Plot for variable 'fatheduc'
+ggplot(bwght)+
+  geom_histogram(aes(fatheduc), binwidth = 1)+
+  xlab("Father's education level")
+boxplot(bwght$fatheduc)
+median(bwght$fatheduc, na.rm = TRUE)
+
+# Removing outliers from 'fatheduc'
+boxplot(bwght$fatheduc,plot=FALSE)$out
+boxplot(bwght$fatheduc) #14 outliers
+fatheduc_outliers = boxplot(bwght$fatheduc,plot=FALSE)$out
+bwght = bwght[-which(bwght$fatheduc%in%fatheduc_outliers),]
+boxplot(bwght$fatheduc)
+
+# Plot for variable 'motheduc'
+ggplot(bwght)+
+  geom_histogram(aes(motheduc), binwidth = 1)+
+  xlab("Mother's education level")
+boxplot(bwght$motheduc)
+median(bwght$motheduc, na.rm = TRUE)
+
+# Removing outliers from 'motheduc'
+boxplot(bwght$motheduc) #12 outliers
+boxplot(bwght$motheduc,plot=FALSE)$out
+motheduc_outliers = boxplot(bwght$motheduc,plot=FALSE)$out
+bwght = bwght[-which(bwght$motheduc%in%motheduc_outliers),]
+boxplot(bwght$motheduc)
+
+# Plots for variables 'parity', 'male', 'white'
+summary(bwght$parity)
+ggplot(bwght)+geom_bar(aes(parity))
+ggplot(bwght)+geom_bar(aes(male))
+ggplot(bwght)+geom_bar(aes(white))
+
+# Plot for variable 'cigs' (for all entries)
+ggplot(bwght)+
+  geom_histogram(aes(cigs))
+
+# Isolating smokers
+smokers <- bwght[bwght$cigs != 0,]
+boxplot(smokers$cigs)
+ggplot(smokers)+
+  geom_histogram(aes(cigs), bins = 15)
+median(smokers$cigs)
+
+# Removing outliers from 'cigs'
+smokers_outliers <- boxplot(smokers$cigs, plot = FALSE)$out #4 outliers
+bwght <- bwght[!(bwght$cigs%in%smokers_outliers),]
+
+str(bwght)
+
+# Cleaned Dataset
+write.csv(bwght, "C:/Users/angro/Desktop/AY 2020-2021/Year 3 Semester 2/MH3511 Data Analysis with Computer/Project/cleanedData.csv")
+
+# Transformation of variable 'cigs' into a categorical variable 'smoker' 
+bwght$smoker = ifelse(bwght$cigs==0, 0, 
+                      ifelse(bwght$cigs<10, 1, 
+                             ifelse(bwght$cigs<25, 2, 3)))
+bwght$smoker = as.factor(bwght$smoker)
+
+# Plot of variable 'smoker'
+ggplot(bwght)+geom_bar(aes(smoker))
+sum(bwght$smoker!=0) #150
+sum(bwght$smoker==0) #985
 ```
 
-
 ```{r}
-data('bwght')
-
-bw <- read.csv("C:/Users/angro/Desktop/AY 2020-2021/Year 3 Semester 2/MH3511 Data Analysis with Computer/Project/cleanedData.csv", header = TRUE)
-
-head(bw)
-```
-
-
-```{r}
-# removing all the variables that we will not be using in our data analysis
-cleanedData <- select(bw, -c("packs", "bwghtlbs", "lbwght", "lfaminc", "cigtax", "cigprice")) 
+# Removing irrelevant variables from the dataset
+cleanedData <- select(bwght, -c("packs", "bwghtlbs", "lbwght", "lfaminc", "cigtax", "cigprice")) 
 
  # Male is a categorical variable that takes on the value 1 when the child born is Male
 cleanedData$male = as.factor(cleanedData$male) 
@@ -49,15 +162,6 @@ cleanedData$bwght = as.numeric(cleanedData$bwght)
 # Changing the family income of the baby's family into numerical data type
 cleanedData$faminc = as.numeric(cleanedData$faminc)    
 
-# Omitting all the NA values present in our data
-cleanedData = na.omit(cleanedData)     
-
-# Create new factor variable 'smoker' takes on the value 1 when the child's mother is a smoker
-cleanedData$smoker = ifelse(cleanedData$cigs==0, 0, 
-                            ifelse(cleanedData$cigs<10, 1, 
-                                   ifelse(cleanedData$cigs<25, 2, 3)))
-cleanedData$smoker = as.factor(cleanedData$smoker)
-
 str(cleanedData)
 head(cleanedData)
 ```
@@ -65,23 +169,19 @@ head(cleanedData)
 ## Scatter Plot Matrix for Numerical Variables
 
 ```{r}
-# Make a correlation scatter plot with lowess lines
-categoricalVariables = c('male', 'white')
-correlationData = select(cleanedData, -all_of(categoricalVariables))
-
 # Make panels for correlation coefficients
 panel.cor <- function(x, y){
     usr <- par("usr"); on.exit(par(usr))
     par(usr = c(0, 1, 0, 1))
     r <- round(cor(x, y), 2)
     txt <- paste0("r = ", r)
-    if (r >= 0.5 | r<= -0.5) {text(0.5, 0.5, txt, cex = 1, col="red")}
-    else {text(0.5, 0.5, txt, cex = 1, col="blue")}
+    if (r >= 0.5 | r<= -0.5) {text(0.5, 0.5, txt, cex = 1.4, col="red")}
+    else {text(0.5, 0.5, txt, cex = 1.4, col="blue")}
     
 }
 
 # Generate the scatter plot matrix    
-pairs(~bwght + faminc + fatheduc + motheduc + cigs,
+pairs(~bwght + faminc + fatheduc + motheduc,
       data=correlationData, 
       upper.panel = panel.smooth,
       lower.panel = panel.cor)
@@ -119,7 +219,7 @@ var.test(cleanedData$bwght ~ cleanedData$white)
 t.test(cleanedData$bwght ~ cleanedData$white, var.equal=TRUE)
 ```
 
-## One-Way ANOVA Test for Categorical Variable 'parity'
+## One-Way ANOVA Test for Categorical Variables 'parity' and 'cigs'
 
 ```{r}
 # View unique values in variable 'parity'
@@ -128,21 +228,21 @@ sort(unique(cleanedData$parity), decreasing=FALSE)
 # Box plot for birth weights across different birth orders
 boxplot(cleanedData$bwght~cleanedData$parity)
 
+# Box plot for birth weights across different degrees of smoking during pregnancy
+boxplot(cleanedData$bwght~cleanedData$smoker)
+
 # One-way ANOVA for birth weight against birth order
-parity.aov = aov(cleanedData$bwght ~ cleanedData$parity)
+parity.aov = aov(cleanedData$bwght~cleanedData$parity)
 summary(parity.aov)
 
 # Pairwise comparisons for birth weight against birth order
 pairwise.t.test(cleanedData$bwght, cleanedData$parity, p.adjust.method = "none")
 
-# Box plot for birth weights across different degrees of smoking during pregnancy
-boxplot(cleanedData$bwght~cleanedData$smoker)
+# One-way ANOVA for birth weight against level of cigarette consumption by the mother per day during pregnancy
+smoker.aov = aov(cleanedData$bwght ~ cleanedData$smoker)
+summary(smoker.aov)
 
-# One-way ANOVA for birth weight against different degrees of smoking during pregnancy
-parity.aov = aov(cleanedData$bwght ~ cleanedData$smoker)
-summary(parity.aov)
-
-# Pairwise comparisons for birth weight against different degrees of smoking during pregnancy
+# Pairwise comparisons for birth weight against level of cigarette consumption by the mother per day during pregnancy
 pairwise.t.test(cleanedData$bwght, cleanedData$smoker, p.adjust.method = "none")
 ```
 
@@ -155,7 +255,7 @@ summary(linReg.faminc)
 
 # Residual plot for family income
 res.faminc<-linReg.faminc$res 
-plot(cleanedData$faminc, residual)
+plot(cleanedData$faminc, res.faminc)
 abline(0,0)
 
 # Residual QQ-plot for family income
@@ -168,7 +268,7 @@ summary(linReg.fatheduc)
 
 # Residual plot for number of years of father's education
 res.fatheduc<-linReg.fatheduc$res 
-plot(cleanedData$fatheduc, residual)
+plot(cleanedData$fatheduc, res.fatheduc)
 abline(0,0)
 
 # Residual QQ-plot for number of years of father's education
@@ -181,7 +281,7 @@ summary(linReg.motheduc)
 
 # Residual plot for number of years of mother's education
 res.motheduc<-linReg.motheduc$res 
-plot(cleanedData$motheduc, residual)
+plot(cleanedData$motheduc, res.motheduc)
 abline(0,0)
 
 # Residual QQ-plot for number of years of mother's education
@@ -190,21 +290,21 @@ qqline(resid(linReg.motheduc), col='red')
 
 ```
 
-## Multiple Linear Regression for Numerical Variables
+## Multiple Linear Regression for Numerical Variables (can ignore, just for reference)
 
 ```{r}
 # Full MLR model with all numerical variables
-MLR <- lm(bwght~faminc+fatheduc+motheduc, data=cleanedData)
+MLR <- lm(bwght~faminc+maxeduc, data=cleanedData)
 summary(MLR)
 
 # Stepwise Feature Selection
 step(MLR, direction="backward")
 
 # Reduced MLR model
-MLR.reduced <- lm(bwght~faminc+fatheduc, data=cleanedData)
-summary(MLR.reduced)
+# MLR.reduced <- lm(bwght~faminc+fatheduc, data=cleanedData)
+# summary(MLR.reduced)
 
-par(mfrow=c(2,2))
+par(mfrow=c(1,1))
 plot(fitted(MLR.reduced), residuals(MLR.reduced), ylab='Residuals', xlab='Fitted Values')
 plot(cleanedData$faminc, residuals(MLR.reduced), ylab='Residuals', xlab='X1')
 plot(cleanedData$fatheduc, residuals(MLR.reduced), ylab='Residuals', xlab='X2')
@@ -218,11 +318,23 @@ plot(cleanedData$fatheduc, residuals(MLR.reduced), ylab='Residuals', xlab='X2')
 # plot(cleanedData$faminc*cleanedData$fatheduc, residuals(MLR.reduced1), ylab='Residuals', xlab='X1X2')
 ```
 
-## Checking for Variance Inflation Factor and Heteroscedasticity
-
 ```{r}
-# Tests for VIF and Heteroskedasticity
+# Trial MLRs
 
-VIF(MLR.reduced)    # Checking if there exists a high degree of multicollinearity in our data
-bptest(MLR.reduced) # Utilising the Breush-Pagan test to test for the presence of Homoscedasticity in our data
+# Full MLR model with all numerical variables
+MLR1 <- lm(bwght~faminc+fatheduc+motheduc+faminc*fatheduc+fatheduc*motheduc+faminc*motheduc, data=cleanedData)
+summary(MLR1)
+
+# Stepwise Feature Selection
+step(MLR1, direction="backward")
+
+# Reduced MLR model
+MLR1.reduced <- lm(bwght~faminc+fatheduc+motheduc+faminc*motheduc, data=cleanedData)
+summary(MLR1.reduced)
+
+MLR2 <- lm(bwght~., data=cleanedData[,!names(cleanedData) %in% c("cigs")])
+summary(MLR2)
+step(MLR2, direction="backward")
+MLR2.reduced <- lm(bwght~fatheduc+motheduc+parity+male+white+smoker, data=cleanedData)
+summary(MLR2.reduced)
 ```
